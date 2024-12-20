@@ -1,33 +1,34 @@
 :root {
-    --test-border1: 5px red solid;
-    --test-border2: 5px rgb(36, 0, 199) solid;
+  --test-border1: 5px red solid;
+  --test-border2: 5px rgb(36, 0, 199) solid;
 }
 
 body {
-    margin: 0;
-    padding: 0px;
-    /* font-family: ; */
-    max-width: 100%;
+  margin: 0;
+  padding: 0px;
+  /* font-family: ; */
+  max-width: 100%;
 }
 
-
 .canvas-wrapper {
-    border: var(--test-border1);
-    height: 100svh;
-    width: 100svw;
-    max-height: 100%;
-    max-width: 100%;
-    /* can use display: flex to get rid of overhang/scroll bars */
+  border: var(--test-border1);
+  height: 100svh;
+  width: 100svw;
+  max-height: 100%;
+  max-width: 100%;
+  /* can use display: flex to get rid of overhang/scroll bars */
 }
 
 /* .canvas {
-    border: var(--test-border2);
-    height: 80%;
-    width: 80%;
+  border: var(--test-border2);
+  height: 80%;
+  width: 80%;
 } */
 
 #canvas {
-    width: 480px;
-    height: 420px;
-    background-color: darkkhaki;
+  /* height: 420px; 
+  width: 480px;
+  height: 80%;
+  width: 80%; */
+  background-color: darkkhaki;
 }

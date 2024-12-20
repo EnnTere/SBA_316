@@ -2,23 +2,25 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="/scripts.js" defer></script>
-    <link rel="stylesheet" href="/styles.css">
-    <title>SBA 316 - Paint</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="/scripts.js" defer></script>
+  <link rel="stylesheet" href="/styles.css" />
+  <title>SBA 316 - Paint</title>
 </head>
 
-
 <body>
-    <section class="canvas-wrapper">
-        <h1></h1>
-        <!-- <div class="canvas"></div> -->
-        <canvas id="canvas"></canvas>
-        <label for="color-picker"></label>
-        <input type="color" name="color-picker" id="color-picker" value="#e66465">
-        <button class="reset-button" value="Reset-Canvas" type="button">Reset Canvas</button>
-    </section>
+  <section class="canvas-wrapper">
+    <h1></h1>
+    <!-- <div class="canvas"></div> -->
+    <!-- Setting width & height inline due to canvas specifications: https://html.spec.whatwg.org/multipage/canvas.html#attr-canvas-width -->
+    <canvas id="canvas" height="800" width="800"></canvas>
+    <label for="color-picker"></label>
+    <input type="color" name="color-picker" id="color-picker" value="#e66465" />
+    <button class="reset-button" value="Reset-Canvas" type="button">
+      Reset Canvas
+    </button>
+  </section>
 </body>
-</html>
 
+</html>
