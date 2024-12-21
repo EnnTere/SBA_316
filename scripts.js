@@ -106,9 +106,13 @@ canvas.addEventListener("mouseup", (e) => {
 
 // Create Continuous Paint Stoke: On moving mouse while holding mouse button, call circle & line draw functions
 // Looks at where mouse started & provides coords for drawLine function to create a path from start (moveTo) to end (lineTo)
+
+// // offset for parent of element (keeps stroke at pointer tip) vs client for element ()
+//   x2 = e.offsetX; // set to offset of event object (i.e. mouse coords)
+//   y2 = e.offsetY;
 canvas.addEventListener("mousemove", (e) => {
   if (isPainting) {
-    x2 = e.offsetX; // set to offset of event object (mouse coords)
+    x2 = e.offsetX; // set to offset of event object (i.e. mouse coords)
     y2 = e.offsetY;
     console.log(x, y, x2, y2, isPainting, "mousemove test");
     drawCircle(x2, y2); // draws circle at current mouse position
@@ -220,27 +224,70 @@ tempImage.addEventListener("load", () => {
 ///// On load, read canvas' background image data 
 // (https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData)
 
+// Returns rgba of pixel at x & y positions
+// console.log(getPixels(25, 68))
+//getPixels(x, y);
+// getPixelQuant(r, g, b);
 
-// Fetch + store pixel data of canvas background
-//vs
-// Returns an ImageData obj w/ a copy of the px data for canvas context
 
-//left, top, width, height => where & what is being grabbed
-//const imageData = ctx.getImageData(sx, sy, sh, sw);
+///within paint function
+// if () {
+
+// }
+
+// returns amount of picels in the canvas of color provided
+// let getPixelQuant = (r, g, b) => {
+
+
+// }
+
+//function getPixels(x, y) {
+let getPixels = (x, y) => {
+
+  // Grabs & stores canvas boundary info & mouse location w/in
+  // const canvasBoundary = canvas.getBoundingClientRect(); // Returns object w/ element's size & position 
+  // const bndryMouseX = event.clientX - canvasBoundary.left; // retrieves mouse position relative to boundary
+  // const bndryMouseY = event.clientY - canvasBoundary.top;
+
+  // Returns an ImageData obj w/ a copy of the px data for canvas
+  // //left, top, width, height => where & what is being grabbed
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  //translate the x and y coordinates into an index representing the offset of the first channel within the one-dimensional array. 
+  //multiply by four because there are four elements per pixel, one for each channel
+  //https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
+  //let pixelIndex = (y * canvasWidth + x) * 4;
+  let index = ((y * (imageData.width * 4)) + (x * 4));
+  //figure out diff
+
+  // Stores the pixel data array from imageData object
+  let pixelData = imageData.data //needed still?
+  const rgbColor = `rgb(${pixelData[0]} ${pixelData[1]} ${pixelData[2]} / ${pixelData[3] / 255})`
+  console.log(rgbColor)
+
+  // return an object with pixel data
+  return {
+    red: pixelData[index],
+    green: pixelData[index + 1],
+    blue: pixelData[index + 2],
+    alpha: pixelData[index + 3]
+  }
+
+};
+
+
+// pixel data retrieval print
+console.log(getPixels(25, 68))
+
+
+// https://developer.mozilla.org/en-US/docs/Web/API/ImageData/data
+
 
 /////// Step Test
   // test reading new object
   // let imageData = new ImageData(100, 100);
   // console.log(imageData.data); // Uint8ClampedArray[40000]
   // console.log(imageData.data.length); // 40000
-
-
-// var to hold changing data? may not be needed
-// let backgroundPixel = canvas.imageData.data[]
-
-// https://developer.mozilla.org/en-US/docs/Web/API/ImageData/data
-
-
 
 ///////////////////////////
 //Win Conditions
