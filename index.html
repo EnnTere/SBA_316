@@ -10,17 +10,39 @@
 </head>
 
 <body>
-  <section class="canvas-wrapper">
+  <section class="page-wrapper">
     <h1></h1>
     <!-- <div class="canvas"></div> -->
     <!-- Setting width & height inline due to canvas specifications: https://html.spec.whatwg.org/multipage/canvas.html#attr-canvas-width -->
-    <canvas id="canvas" height="800" width="800"></canvas>
-    <label for="color-picker"></label>
-    <input type="color" name="color-picker" id="color-picker" value="#e66465" />
-    <button class="reset-button" value="Reset-Canvas" type="button">
-      Reset Canvas
-    </button>
+    <div class="canvas-wrapper">
+      <canvas id="canvas" height="800" width="800"></canvas>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+      <!-- Toolbar -->
+
+      <div>
+
+        <!-- Tools -->
+        <span id="size">10</span>
+
+      </div>
+
+      <!-- Upload -->
+      <input type="file" name="filename" id="file" />
+    </div>
   </section>
+
+  <!-- Mouse Detection Testing -->
+  <aside>
+    <p>Canvas <span id="canvas_state">is not</span> being interacted with.</p>
+
+    <p>Element <span id="element_state">is not</span> being interacted with</p>
+
+    <p>Mouse coordinates:<span id="mouse_coords"></span></p>
+  </aside>
 </body>
 
 </html>

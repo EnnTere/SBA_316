@@ -1,432 +1,448 @@
-/// Painting game planning ///
-
-// 1. Dynamic canvas
-// - MVP UI
-// - Interactions: mouseover, click
-
-// 2. Canvas Content
-// - Generate simple background (text)
-// - *Attempt* ImageData background reading
-
-// 3. Win/Lose
-// - win & lose conditions (detecting boundaries, relies on ImageData)
-// - notifying player of win or loss
-
-// 4. Score
-// - scoring rules
-// - collecting & saving input
-// - calculating & saving scores
-
-// 5. UI, UX, Presentation
-// - Styling
-// - Min interaction size 45 x 45
-// - Media queries
-
-// 6. New Game
-// - Clear score
-// - Clear canvas
-
-// Optional
-// - Backup canvas with method similar to class lab
-///////////////////////////////////////////////////////////////////
-
 ///////////////////////////
 /// Global Variables
 ///////////////////////////
 
-//let canvas = document.querySelector("canvas")
-const selectColor = document.querySelector("#color-picker");
-const resetButton = document.querySelector(".reset-button");
-
-// Caching canvas & retrieving canvas API
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d"); //returns object w/ properties & methods for drawing
+// Display Testing
+const canvasState = document.getElementById("canvas_state");
+const elementState = document.getElementById("element_state");
+const mouseCoords = document.getElementById("mouse_coords");
+let canvasInteraction = false;
+let elementInteraction = false;
 
 // Painting settings
 let size = 5;
 let color = "#111111";
 let isPainting = false;
-// Mouse positions
-let x;
-let y;
+let pixels = [];
+
+// Canvas element size & position from viewport + mouse positions
+let mapMouseCoords = { x: 0, y: 0 };
+
+// Mouse detection
+let proximity = 5;
+
+
+
+/////////////////////////////////
+////      DOM Elements      //// 
+///////////////////////////////
+
+const body = document.querySelector("body")
+const wrapper = document.querySelector(".page-wrapper")
+
+// Canvas & retrieving canvas API
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d"); //returns object w/ properties & methods for drawing
+
+// Text
+//const header = document.createElement("h1")
+// wrapper.appendChild(toolbar);
+
+
+
+
+
+
+
+///////////////////////////////////////////////////
+// Create Interactive Elements & Add to Toolbar //
+//////////////////////////////////////////////////
+
+
+//// Creating Toolbar ////
+const sidebar = document.querySelector(".sidebar")
+const toolbar = document.createElement("menu")
+
+// trying out CSSText w/ template literals for bulk styling
+toolbar.style.cssText = ` 
+  background-color: indianred;
+  height: 50%;
+  width: 20%;
+  padding: .75em;
+`; 
+
+//sidebar.appendChild(toolbar);
+sidebar.prepend(toolbar);
+
+// Toolbar buttons
+const colorLabel = document.createElement("label")
+colorLabel.setAttribute("for", "color-picker")
+toolbar.append(colorLabel);
+
+const colorPicker = document.createElement("input")
+colorPicker.setAttribute("type", "color")
+toolbar.append(colorPicker);
+
+const resetButton = document.querySelector(".reset-button");
+const sizeSpan = document.getElementById("size");
+
+
+
+// Array of objects with button properties 
+//// Including hidden labels as "+"" and "-" aren't accessible label names
+//// Attempted after toolbar & buttons functionality had been written; not best use of time for project
+const buttonSettings = [
+  {
+    text: "+",
+    // label: "Increase brush size",
+    // labelFor: "brush-increase",
+    // labelClass: 'visHidden',
+    action: () => {
+      size += 5;
+      if (size > 50) {size = 50};
+      updateSizeTool();
+    }
+  },
+  {
+    text: "-",
+    // label: "Decrease brush size",
+    // labelFor: "brush-decrease",
+    // labelClass: 'visHidden',
+    action: () => {
+      size -= 5;
+      if (size < 5) {size = 5};
+      updateSizeTool();
+    }
+  },
+  {
+    text: "Reset",
+    action: () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+];
+
+
+//////// Map & append buttons + retain position of span ////////
+
+// Creates elements for objs in button arr, maps obj properties, & returns buttons
+const buttons = buttonSettings.map(({text, label, labelFor, labelClass, action}) => {
+
+  // Creates button labels
+  // const buttonLabel = document.createElement("label")
+  // buttonLabel.textContent = label;
+  // buttonLabel.htmlFor = labelFor;
+  // buttonLabel.className = labelClass;
+
+  // Creates buttons
+  const button = document.createElement("button");
+  // button.append(buttonLabel)
+  button.textContent = text;
+  button.addEventListener('click', action);
+
+  //toolbar.append(buttonLabel, button)
+  return button;
+  // return toolbar;
+});
+
+// Appends new buttons to toolbar
+toolbar.append(
+  buttons[0],
+  sizeSpan,
+  buttons[1],
+  buttons[2]
+);
+
+
+//////// Style Toolbar Options ////////
+
+// Cache toolbar's entire HTMLCollection & to be styled elements
+const toolbarOptions = toolbar.children;
+
+// Add class to all interactive children w/in collection
+for (let i = 0; i < toolbarOptions.length; i++) {
+  const children = toolbarOptions[i];
+  if (children.tagName === "BUTTON" || children.tagName === "INPUT") { // (not futureproof)
+    children.classList.add("toolbarOptions")
+  };
+};
+
+// body > page wrapper> sidebar > input
+// console.log(sidebar.children[1] = sidebar.classList.add
+
+
+// sidebar.lastElementChild.classList.add("button")
+// sidebar.querySelectorAll("input");
+
+
+// loop through sidebar
+// if element Input
+// lass add toolbarOptions 
+
+// if
+
+
+// menu > children[2]
+// .style = size
+
+toolbar.lastChild.style.cssText = `
+  height: 25px;
+  margin-top: 40px;
+  margin-bottom: 5px;
+`;
+
+
+
+///////////////////////////
+//// Canvas Background
+///////////////////////////
+
+
+//////// Canvas Background Image File Input ////////
+// Validates & draws file on canvas
+
+let setBackgroundImg = () => {
+  const fileInput = document.getElementById("file")
+  const uploadedFiles = fileInput.files[0];
+  const fileReader = new FileReader(); // access & obtain files from FileList object returned by user's input
+
+  const fileValidation = (uploadedFiles) => {
+    const allowedTypes = /(\.jpg|\.jpeg|\.png|\.gif|\.webp)$/i;
+
+    // Verify file uploaded & file type
+    if (!uploadedFiles) {
+      //window.alert("Please select a file");
+      return false;
+    };
+    
+    if (!allowedTypes.exec(uploadedFiles.name)) {
+      window.alert("You can only upload jpegs, jpgs, pngs, gifs, or webp");
+      fileInput.value = "";
+      return false;
+    }
+    return true;
+  };
+
+  if (!fileValidation(uploadedFiles)) {
+    return;
+  };
+
+    // If all file verifications passed, display the file
+    fileReader.onload = (e) => { // when the reader loads
+      const imgUpload = new Image();
+      // const imgUpload = document.createElement("img");
+      imgUpload.onload = () => { // ensure img fully loaded, then clear canvas & draw img
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(imgUpload, 0, 0);
+      };
+    imgUpload.src = e.target.result; // after img has loaded, use the image as the src
+  };
+
+  fileReader.readAsDataURL(uploadedFiles); // reads contents of uploaded file & embeds inline in document
+};
+
+
+
 
 ///////////////////////////
 //// Functions
 ///////////////////////////
 
-
-//Combines shapes for a continous and more natural looking stroke
-// Creates a circle
-const drawCircle = (x, y) => {
+// Creates the circle
+const drawCircle = (currentX, currentY) => {
   ctx.beginPath(); // Starts a path
-  ctx.arc(x, y, size, 0, Math.PI * 2); // Provides specs for circle
+  ctx.arc(currentX, currentY, size, 0, Math.PI * 2); // Provides specs for circle
   ctx.fillStyle = color; // Sets color used for fill
   ctx.fill(); // Fills a path
-  console.log(x.y, "draw circle test");
 };
 
-// Draws a line
-const drawLine = (x1, y1, x2, y2) => {
+// Draws the line from prev coords to current
+const drawLine = (prevX, prevY, currentX, currentY) => {
   ctx.beginPath();
-  ctx.moveTo(x1, y1); // Sets starting point of path
-  ctx.lineTo(x2, y2); // Draws path from moveTo position to param
+  ctx.moveTo(prevX, prevY,); // Sets starting point of path
+  ctx.lineTo(currentX, currentY); // Draws path from moveTo position to param
   ctx.strokeStyle = color; // Styles the stroke
   ctx.lineWidth = size * 2; // Sets width of path
   ctx.stroke(); // Adds  outline to the path
-  console.log(x, y, "draw line test");
 };
 
-// Sets
-// Takes stroke size & displays it on canvas toolbar
-// const strokeSizeTool = () => (
-//     sizeElement.innerText = size
-// );
+// Translate mouse coordinates from viewport to corresponding coords w/in canvas
+const getCanvasCoords = (e, canvas) => {
+  let rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+    y: (e.clientY - rect.top) * (canvas.height / rect.height)
+    // Subtracts offset relative to viewport for mouse coords relative to canvas. Multiplied to account for scaling. 
+  };
+};
+
+// Updates toolbar text to reflect stroke size
+const updateSizeTool = () => (
+  sizeSpan.innerText = size
+);
+
+// Update values in display testing values
+const updateDisplay = () => {
+	canvasState.textContent = canvasInteraction ? 'is' : 'is not';
+	elementState.textContent = elementInteraction ? 'is' : 'is not';
+  mouseCoords.textContent = JSON.stringify(mapMouseCoords, function(key, val) {
+  return val.toFixed ? Number(val.toFixed(3)) : val;
+})
+};
+// Used replacer with stringify to reduce places shown & convert back to number
+// https://stackoverflow.com/questions/9339870/how-to-reduce-numbers-significance-in-jsons-stringify
+
+
+
+// Path overlap detection
+const circle = new Path2D();
+circle.arc(150, 75, 50, 0, 2 * Math.PI);
+ctx.fillStyle = "red";
+ctx.fill(circle);
+
+
+let mouseOverlap = (e) => {
+  mapMouseCoords = getCanvasCoords(e, canvas);
+  elementInteraction = ctx.isPointInPath(circle, mapMouseCoords.x, mapMouseCoords.y);
+  updateDisplay();
+  //console.log("point")
+};
+
+
+/////////////////////////////////////////////////////////
+    ////  Abandoned checking if element was colored //// 
+///////////////////////////////////////////////////////
+// Array of pixels in canvas 
+// Every pixel has 4 values: r, g, b, alpha
+// pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+// // Get index by looping through an array
+// // Every element has 4 entries
+// let getPixelColor = (x, y) => {
+//   let pixIndex = ((y * (pixels.width * 4)) + (x * 4));
+//   return {
+//     r: pixels.data[pixIndex],
+//     g: pixels.data[pixIndex + 1],
+//     b: pixels.data[pixIndex + 2],
+//     a: pixels.data[pixIndex + 3]
+//   };
+// };
+//////////////////////////////////////////////////
+
+
+
+
 
 ///////////////////////////
 //// Canvas Listeners  //// 
 ///////////////////////////
 
+// Change paint colors
+colorPicker.addEventListener("change", (e) => {
+  color = e.target.value;
+});
+
 // Start Painting: When holding mouse button
+//// Translate mouse coordinates of event object from viewport to corresponding coords w/in canvas
 canvas.addEventListener("mousedown", (e) => {
   isPainting = true;
-  x = e.offsetX; // read-only property of mousedown event; provides x offset coordinates of the mouse pointer between the mouse event & the padding edge of the target node
-  y = e.offsetY; // represent the X & Y coords of mouse event relative to the position of the canvas element => used to determine where the player started the mouse event on the canvas
-  console.log(x, y, isPainting, "mousedown test");
+  mapMouseCoords = getCanvasCoords(e, canvas); 
+  //console.log(mapMouseCoords, isPainting, "mousedown test");
 });
+
 
 // Stop Painting: On releasing mouse button
 canvas.addEventListener("mouseup", (e) => {
   isPainting = false; // signals that drawing has stopped
-  x = undefined; // mouse location is no longer stored once stopped
+  x = undefined; // reset mouse coords
   y = undefined;
-  console.log(x, y, isPainting, "mouseup test");
+  canvasInteraction = false;
+  strokeInteraction = false;
+  //console.log(x, y, isPainting, "mouseup test");
 });
 
-// Issue: x+y aren't being passed to mousemove
 
-// Create Continuous Paint Stoke: On moving mouse while holding mouse button, call circle & line draw functions
-// Looks at where mouse started & provides coords for drawLine function to create a path from start (moveTo) to end (lineTo)
-
-// // offset for parent of element (keeps stroke at pointer tip) vs client for element ()
-//   x2 = e.offsetX; // set to offset of event object (i.e. mouse coords)
-//   y2 = e.offsetY;
+// Create Continuous Paint Stoke: On moving mouse & holding mouse button
+// 1. Combines shapes for a continuous & more natural looking stroke
+// 2. Looks at where mouse started & provides coords for draw functions to create a path from start (moveTo) to end (lineTo)
+// 3. Keeps stroke at pointer tip
+////// ?????? Checks if overlapping??????? ////////////////// <---------
 canvas.addEventListener("mousemove", (e) => {
-  if (isPainting) {
-    x2 = e.offsetX; // set to offset of event object (i.e. mouse coords)
-    y2 = e.offsetY;
-    console.log(x, y, x2, y2, isPainting, "mousemove test");
-    drawCircle(x2, y2); // draws circle at current mouse position
-    drawLine(x, y, x2, y2); // draws line from previous to current mouse position
-    x = x2; // values updated to last values of offset so line starts from mouse's position
-    y = y2;
-    console.log(x, y, x2, y2, isPainting, "mousemove test");
-  }
-  console.log(x, y, isPainting, "mousemove done test");
+  const prevMouseCoords = { ...mapMouseCoords}; // Creates shallow copy of mouse coords obj
+  mapMouseCoords = getCanvasCoords(e, canvas); // updates current coords
+
+  if (isPainting) { // if painting, draw
+    canvasInteraction = true; // Display for texting
+    drawCircle(prevMouseCoords.x, prevMouseCoords.y); // draws circle at current mouse position
+    drawLine(mapMouseCoords.x, mapMouseCoords.y, prevMouseCoords.x, prevMouseCoords.y); // draws line from previous to current mouse position
+    mouseOverlap(e);
+    if (!elementInteraction) { // if point is outside the path
+      console.log("outside");
+    } else {
+        console.log("in");
+      };
+    };
+
+    ////  May not need Image Data check //// 
+    // let pixelColor = getPixelColor(mapMouseCoords.x, mapMouseCoords.y);
+    // if (pixelColor.a) {
+    //   window.alert("You're outside!");
+    // };
+
+  //console.log(mapMouseCoords.x, mapMouseCoords.y, isPainting, "mousemove test done");
+  updateDisplay();
 });
 
-//  Toolbar functionality
 
-//9
-// increase size
-// decrease size
-
-
-// Change Stroke Color: When the color picker's value is changed, set color var to selected color
-selectColor.addEventListener("change", (e) => {
-  color = e.target.value;
-  console.log("change test");
+//// Update Canvas Background Image ////
+file.addEventListener("change", (e) => {
+  setBackgroundImg();
 });
-
-//));
-
-
-// Reset canvas: clears entire canvas of strokes painted by player
-resetButton.addEventListener("click", () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height); //defines rectangles starting points & dimensions, pixels in rectangular area are changed to transparent black
-  console.log("reset test");
-});
-
-//));
-
-
 
 ///////////////////////////
-////   Functionality   //// 
+///////   Abandoned   /////
 ///////////////////////////
 
 
-// Dynamically updating background - erases everything and adds a new value
-//Not sure what event it should be waiting for. Need to look at available events
-// canvas.addEventListener("" (e) => {
-
-
-// });
-// https://stackoverflow.com/questions/31882814/html-canvas-change-text-dynamically
-
-
-// 1
-// generate the background
-//// Turn in to a Function
-
-
-// Temp Background Fill: Text
-ctx.font = "12.25em Arial"; // Sets font properties
-ctx.textAlign = 'center'; // centers text
-ctx.textBaseline = 'middle';
-// ctx.fillText("Test", (canvas.height / 2),(canvas.width / 2)); // draws & fills font + start coords
-ctx.strokeText("Test", (canvas.height / 2),(canvas.width / 2)); // Draws text w/ strokes, no fill + start coords
-
-
-
+//More selective reset button
 /*When reset button is hit, text does not reappear*/
 /* can link all of these together*/
 
+// Dynamically updating background - erases everything and adds a new value
+
+// Ex. Generate new letter
+// newLetter.addEventListener("click", () => {
+//   ctx.font = "12.25em Arial";
+//   ctx.textAlign = 'center';
+//   ctx.textBaseline = 'middle';
+//   ctx.strokeText("2nd", (canvas.height / 2),(canvas.width / 2)); 
+// });
+
+// https://stackoverflow.com/questions/31882814/html-canvas-change-text-dynamically
 
 
 
 
-
-
-////// Test: Generate a background on load /////////
+//////////////////////////////
+//// Tests + Placeholders ////
+//////////////////////////////
 
 // Creates an HTML Image Element (<img>) not attached to the DOM
 const tempImage = new Image();
 tempImage.src = "./assets/peach.png";
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement
-
-
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement
 
 // draws an image on background of canvas data at this location
-  //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+//https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+
+
+// Temp Background Fill: Text
+ctx.font = "2.75em Arial"; // Sets font properties
+ctx.textAlign = 'center'; // centers text
+ctx.textBaseline = 'middle';
+ctx.strokeText(
+  `Draw on the red circle & look below`,
+  (canvas.height / 2),(canvas.width / 2)
+); // Draws text w/ strokes, no fill + start coords
+
 tempImage.addEventListener("load", () => {
-  console.log("image");
-  ctx.drawImage(tempImage, 0, 0/*, 233, 320*/); // 
+  //console.log("image");
+  ctx.drawImage(tempImage, (canvas.height / 2),(canvas.width / 4));
+  //  initialCanvas();
 }); 
 
-
-
-
-///////////////
-// Next Steps
-///////////////
-
-
-// ImageData
-//// Creates read-only object that reads background pixel data of canvas + writes to a data array 
-//// Width of img in px, height of img in px, (typed) array of ints
-//// 0 - 3 index: R, G, B, Alpha, etc
-//// Range: 0 to (height × width × 4) - 1 
-
-
-/////////// Read canvas' background
-// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas
-
-///// On load, read canvas' background image data 
-// (https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData)
-
-// Returns rgba of pixel at x & y positions
-// console.log(getPixels(25, 68))
-//getPixels(x, y);
-// getPixelQuant(r, g, b);
-
-
-///within paint function
-// if () {
-
-// }
-
-// returns amount of picels in the canvas of color provided
-// let getPixelQuant = (r, g, b) => {
-
-
-// }
-
-//function getPixels(x, y) {
-let getPixels = (x, y) => {
-
-  // Grabs & stores canvas boundary info & mouse location w/in
-  // const canvasBoundary = canvas.getBoundingClientRect(); // Returns object w/ element's size & position 
-  // const bndryMouseX = event.clientX - canvasBoundary.left; // retrieves mouse position relative to boundary
-  // const bndryMouseY = event.clientY - canvasBoundary.top;
-
-  // Returns an ImageData obj w/ a copy of the px data for canvas
-  // //left, top, width, height => where & what is being grabbed
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-  //translate the x and y coordinates into an index representing the offset of the first channel within the one-dimensional array. 
-  //multiply by four because there are four elements per pixel, one for each channel
-  //https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
-  //let pixelIndex = (y * canvasWidth + x) * 4;
-  let index = ((y * (imageData.width * 4)) + (x * 4));
-  //figure out diff
-
-  // Stores the pixel data array from imageData object
-  let pixelData = imageData.data //needed still?
-  const rgbColor = `rgb(${pixelData[0]} ${pixelData[1]} ${pixelData[2]} / ${pixelData[3] / 255})`
-  console.log(rgbColor)
-
-  // return an object with pixel data
-  return {
-    red: pixelData[index],
-    green: pixelData[index + 1],
-    blue: pixelData[index + 2],
-    alpha: pixelData[index + 3]
-  }
-
-};
-
-
-// pixel data retrieval print
-console.log(getPixels(25, 68))
-
-
-// https://developer.mozilla.org/en-US/docs/Web/API/ImageData/data
-
-
-/////// Step Test
-  // test reading new object
-  // let imageData = new ImageData(100, 100);
-  // console.log(imageData.data); // Uint8ClampedArray[40000]
-  // console.log(imageData.data.length); // 40000
-
-///////////////////////////
-//Win Conditions
-//////////////////////////
-
-//Detecting if point is within path/stroke
-// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/isPointInPath
-
-// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/isPointInStroke
-
-// ? https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getContextAttributes
-
-
-
-///////////////////////////
-////      Sources      //// 
-///////////////////////////
-// 
-// Watch starting at 5-5:30: https://www.youtube.com/watch?v=9rsDNifGods
-// https://foolishdeveloper.com/drawing-app-javascript/
-// https://simon.html5.org/dump/html5-canvas-cheat-sheet.html
-// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas
-// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData
-
-// Read
-  // https://webglfundamentals.org/webgl/lessons/webgl-anti-patterns.html
-  // https://medium.com/@doomgoober/resizing-canvas-vector-graphics-without-aliasing-7a1f9e684e4d
-  //https://isaiahnixon.com/dynamic-canvas/
-  // https://stackoverflow.com/questions/22891827/how-do-i-hand-draw-on-canvas-with-javascript
-/* 
-
-//////////////////////////////////////////////////////////////
-DOM Paint for ReferenceError
-
-PART 1: Create the canvas!
-
-a. Make a function called createCanvas
-b. Inside, add a for loop that loops from 0 to 1080
-c. In the for loop, create a new div element
-d. Then append the new div element to the div with id "canvas" (HINT: line 1)
-e. In the global scope, call the createCanvas function
-
-
-
-function createCanvas() {
-    for(let i = 0; i <= 2080; i++) {
-        let divWrapper = document.createElement("div");
-        canvas.appendChild(divWrapper);
-    }
-    console.log("creating")
-};
-
-createCanvas();
-
-
-/////////////////////////////////
-PART 2: Paint!
-
-a. Add an event listener to the div with id of canvas
-b. It should respond to the 'mouseover' event
-c. Use a condition to check if the target element is not the canvas div
-d. Also check if the 'canvasState' variable is true (HINT: line 4)
-e. If both checks pass, set the background color of the target element to the value of the 'color' variable (HINT: line 5)
-
-
-
-function onCanvas(event) {
-    if (event.target != canvas && canvasState) {
-        event.target.style.backgroundColor = color;
-        console.log("callback")
-    }
-};
-
-
-canvas.addEventListener("mouseover", onCanvas)
-
-
-///////////////////////////////
-PART 3: Stop painting!
-
-a. Add an event listener to the canvas div that listens for 'click' events
-b. In the callback function it should toggle the boolean value of the variable 'canvasState'
-
-
-
-function paint() {
-    if (!canvasState) {  // = !canvasState?
-        canvasState = true;
-    } else {
-        canvasState = false;
-    }
-    
-};
-
-canvas.addEventListener("click", paint)
-
-
-
-/////////////////////////////////
-PART 4: Change the color!
-
-a. Add an event listener to the input with type 'color' (HINT: line 2)
-b. It should respond to the 'change' event
-c. Inside the callback, set the 'color' variable to the current value of the target element
-
-
-
-function changeColor(event) {
-    color = event.target.value;
-};
-
-inpColor.addEventListener("change", changeColor)
-
-
-/////////////////////////////////
-PART 5: A clean slate...
-
-a. Add an event listener to the button element that listens for 'click' events (HINT: line 3)
-b. It should clear the canvas div of any child elements
-c. Then call the createCanvas function you created in Part 1
-
-
-
-function clear() {
-    while (canvas.firstChild) {
-        canvas.removeChild(canvas.firstChild)
-    }
-    createCanvas();
-};
-
-
-button.addEventListener("click", clear)
-
-
-/////////////////////////////////
-PART 6: Create your Mona Lisa!
-
-a. Use your skills to paint a memorable picture
-b. Take a screenshot of your work of art
-c. Share it with the class! (Slack)
-
-*/
+// let initialCanvas = () => {
+//   //drawImage
+//   ctx.drawImage(tempImage, 0, 0/*, 233, 320*/);
+//   // ctx.fillText("Test", (canvas.height / 2),(canvas.width / 2)); // draws & fills font + start coords
+// };

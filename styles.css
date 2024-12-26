@@ -8,27 +8,98 @@ body {
   padding: 0px;
   /* font-family: ; */
   max-width: 100%;
+  background-color:darkcyan;
 }
 
-.canvas-wrapper {
-  border: var(--test-border1);
-  height: 100svh;
+.page-wrapper {
+  /* border: var(--test-border1); */
+  /* height: 100svh;
   width: 100svw;
   max-height: 100%;
-  max-width: 100%;
+  max-width: 100%; */
+  display: flex;
+  /* flex-direction: row; */
+  /* align-items: center; */
+  justify-content: center;
   /* can use display: flex to get rid of overhang/scroll bars */
 }
 
-/* .canvas {
-  border: var(--test-border2);
+.canvas-wrapper {
+    border: 5px solid black;
+    height: 800px;
+}
+
+.canvas {
+  /* border: var(--test-border1); */
   height: 80%;
   width: 80%;
-} */
+}
 
 #canvas {
   /* height: 420px; 
   width: 480px;
   height: 80%;
   width: 80%; */
-  background-color: darkkhaki;
+  background-color: white;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* height: 80%; */
+  /* border: 2px solid red; */
+}
+
+menu {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbarOptions {
+  /* background-color: aliceblue; */
+  /* background-color: rgb(166, 247, 247); */
+  /* border: none; */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75em;
+  height: 40px;
+  width: 45px;
+  /* margin: .25em; */
+  padding: 0.25em;
+  cursor: pointer;
+}
+
+/* Hides labels visually, but not from screen readers */
+/* Based on w3 guidelines: https://www.w3.org/WAI/tutorials/forms/labels/ */
+.visHidden {
+  height: 1px;
+  width: 1px; 
+  position: absolute;
+  overflow: hidden;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip-path: rect(0 0 0 0);
+}
+
+#size {
+  display: flex; 
+  /* justify-content: center; */
+  background-color: aliceblue;
+  border: 1px solid black;
+  align-items: center;
+  justify-content: center;
+  /* font-size: 0.75em; */
+  height: 25px;
+  width: 37px;
+  /* margin: .25em; */
+  margin: -35px .25em;
+}
+
+aside {
+  text-align: center;
 }
